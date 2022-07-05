@@ -1,18 +1,18 @@
-const Event = require("../../structures/Event");
+const Event = require("../../structures/Event")
 
 module.exports = class extends Event {
   constructor(client) {
     super(client, {
       name: "ready",
-    });
+    })
   }
 
   run = () => {
     console.log(
       `Bot ${this.client.user.username} logado com sucesso em ${this.client.guilds.cache.size} servidores`
-    );
-    this.client.regCommands();
+    )
+    this.client.regCommands()
 
-    this.client.manager.init(this.client.user.id);
-  };
-};
+    this.client.manager.init(this.client.user.id)
+  }
+}

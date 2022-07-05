@@ -1,10 +1,10 @@
-const Command = require("../../structures/Command");
+const Command = require("../../structures/Command")
 
 const {
   MessageEmbed,
   MessageActionRow,
   MessageSelectMenu,
-} = require("discord.js");
+} = require("discord.js")
 
 module.exports = class extends Command {
   constructor(client) {
@@ -19,7 +19,7 @@ module.exports = class extends Command {
           required: true,
         },
       ],
-    });
+    })
   }
 
   run = async (interaction) => {
@@ -27,7 +27,7 @@ module.exports = class extends Command {
       return interaction.reply({
         content: "Você não tem permisão para usar esse comand!",
         ephemeral: true,
-      });
+      })
 
     const channels = interaction.guild.channels.cache.filter(
       (c) =>
@@ -36,13 +36,13 @@ module.exports = class extends Command {
           .permissionsFor(this.client.user.id)
           .has(["SEND_MESSAGES", "EMBED_LINKS"]) &&
         c.permissionsFor(interaction.user.id).has(["SEND_MESSAGES"])
-    );
+    )
 
     if (!channels.size)
       return interaction.reply({
         content: "Não consigo enviar a mensagem nos canais desse servidor!",
         ephemeral: true,
-      });
+      })
 
     const actionRow = new MessageActionRow().addComponents([
       new MessageSelectMenu()
@@ -53,36 +53,36 @@ module.exports = class extends Command {
             return {
               label: c.name,
               value: c.id,
-            };
+            }
           }),
         ]),
-    ]);
+    ])
 
     const reply = await interaction.reply({
       content: "**Escolha um canal**",
       components: [actionRow],
       fetchReply: true,
       ephemeral: true,
-    });
+    })
 
-    const filter = (i) => i.user.id === interaction.user.id;
+    const filter = (i) => i.user.id === interaction.user.id
     const collector = reply.createMessageComponentCollector({
       filter,
       max: 1,
       time: 3 * 60000,
-    });
+    })
 
     collector.on("collect", (i) => {
-      const channelId = i.values[0];
-      const channel = interaction.guild.channels.cache.get(channelId);
+      const channelId = i.values[0]
+      const channel = interaction.guild.channels.cache.get(channelId)
 
-      const text = interaction.options.getString("mensagem");
+      const text = interaction.options.getString("mensagem")
 
       const embed = new MessageEmbed()
         .setTitle(`Recado de ${interaction.user.username}:`)
         .addField(text, "\u200B", true)
         .setColor("#0000ff")
-        .setTimestamp();
+        .setTimestamp()
 
       channel
         .send({ embeds: [embed] })
@@ -99,15 +99,15 @@ module.exports = class extends Command {
             ephemeral: true,
             components: [],
           })
-        );
-    });
+        )
+    })
 
     collector.on("end", (collected, reason) => {
       if (reason === "time")
         interaction.editReply({
           content: "O tempo para informar um canal se esgotou!",
           components: [],
-        });
-    });
-  };
-};
+        })
+    })
+  }
+}

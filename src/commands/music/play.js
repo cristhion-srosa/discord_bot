@@ -1,8 +1,12 @@
-const { MessageEmbed } = require("discord.js");
+const { MessageEmbed, MessageActionRow, MessageButton } = require("discord.js")
 
-const Command = require("../../structures/Command");
+const { toNumber } = require("lodash")
 
-const { convertTime } = require("../../utils/convert.js");
+const Command = require("../../structures/Command")
+
+const { convertTime } = require("../../utils/convert.js")
+
+const { connectedChannel } = require("../../utils/verify.js")
 
 module.exports = class extends Command {
   constructor(client) {
@@ -17,134 +21,180 @@ module.exports = class extends Command {
           required: true,
         },
       ],
-    });
+    })
   }
   run = async (interaction) => {
-    if (!interaction.member.voice.channel)
-      return interaction.reply({
-        content: `Você precisa estar em um canal de voz para usar esse comando!`,
-        ephemeral: true,
-      });
-    if (
-      interaction.guild.me.voice.channel &&
-      interaction.guild.me.voice.channel.id !==
-        interaction.member.voice.channel.id
-    )
-      return interaction.reply({
-        content: `Você precisa estar no mesmo canal de voz que eu para utilizar este comando!`,
-        ephemeral: true,
-      });
+    const isConnected = await connectedChannel(interaction)
+    if (!isConnected) return
 
-    const search = interaction.options.getString("música");
+    const search = interaction.options.getString("música")
 
     const player = this.client.manager.create({
       guild: interaction.guild.id,
       voiceChannel: interaction.member.voice.channel.id,
       textChannel: interaction.channel.id,
-      selfDeafen: true
-    });
+      selfDeafen: true,
+    })
 
-    if (player.state === "DISCONNECTED") player.connect();
+    if (player.state === "DISCONNECTED") player.connect()
 
     let res
-    
+
     try {
-      res = await this.client.manager.search(search, interaction.user);
+      res = await this.client.manager.search(search, interaction.user)
 
       if (res.loadType === "LOAD_FAILED") {
-        if (!player.queue.current) player.destroy();
-        throw res.exception;
+        if (!player.queue.current) player.destroy()
+        throw res.exception
       }
     } catch (err) {
       return interaction.reply({
-        content: `Aconteceu um erro ao tentar buscar a música: ${err.message}`,
+        embeds: [
+          new MessageEmbed()
+            .setColor("RED")
+            .setTitle("Aconteceu um erro ao buscar a música!")
+            .setDescription(`Erro: ${err.message}`)
+            .setTimestamp(),
+        ],
         ephemeral: true,
-      });
+      })
     }
 
     switch (res.loadType) {
       case "NO_MATCHES":
-        if (!player.queue.current) player.destroy();
+        if (!player.queue.current) player.destroy()
         return await interaction.reply({
+          embeds: [
+            new MessageEmbed()
+              .setColor("RED")
+              .setTimestamp()
+              .setTitle("Nenhum resultado encontrado!"),
+          ],
+          ephemeral: true,
+        })
+
+      case "PLAYLIST_LOADED":
+        const playlistSize = Number(player.queue.size) - 1
+        player.queue.add(res.tracks)
+
+        if (!player.playing && !player.paused) await player.play()
+
+        const playlistReply = await interaction.reply({
           embeds: [
             new MessageEmbed()
               .setColor(this.client.embedColor)
               .setTimestamp()
-              .setDescription("Nenhum resultado encontrado!"),
+              .setTitle("Playlist adicionada à fila")
+              .setDescription( `[${res.playlist.name}](${search}) - \`[${convertTime(res.playlist.duration)}]\`` )
           ],
-          ephemeral: true,
-        });
+          components: [
+            new MessageActionRow().addComponents([
+              new MessageButton()
+                .setStyle("DANGER")
+                .setLabel("️X️")
+                .setCustomId("REMOVE"),
+            ]),
+          ],
+          fetchReply: true,
+        })
+
+        const playlistCollector =
+          await playlistReply.createMessageComponentCollector({
+            time: 1 * 60000,
+          })
+
+        playlistCollector.once("collect", async () => {
+          const removeds = Number(player.queue.size - playlistSize) - 1
+          for (let i = player.queue.size; i > playlistSize; i--) {
+            player.queue.remove(toNumber(i))
+          }
+          await interaction.editReply({
+            embeds: [
+              new MessageEmbed()
+                .setColor("RED")
+                .setTitle(`${removeds} músicas removidas!`),
+            ],
+          })
+        })
+
+        playlistCollector.once("end", () => {
+          playlistReply.delete()
+        })
+
+        break
       case "TRACK_LOADED":
-        player.queue.add(res.tracks[0], interaction.user);
-        if (!player.playing && !player.paused && !player.queue.length)
-          player.play();
-
-        const trackLoad = new MessageEmbed()
-          .setColor(this.client.embedColor)
-          .setTimestamp()
-          .setDescription(
-            `[${res.tracks[0].title}](${res.tracks[0].uri}) - \`[${convertTime(
-              res.tracks[0].duration
-            )}]\` adicionado à fila.`
-          );
-        return await interaction.reply({ embeds: [trackLoad] });
-      case "PLAYLIST_LOADED":
-        player.queue.add(res.tracks);
-        if (!player.playing && !player.paused)
-          await player.play();
-
-        const PlaylistLoad = new MessageEmbed()
-          .setColor(this.client.embedColor)
-          .setTimestamp()
-          .setDescription(
-            `[${res.playlist.name}](${search}) - \`[${convertTime(
-              res.playlist.duration
-            )}]\` \n playlist adicionada`
-          );
-        return await interaction.reply({ embeds: [PlaylistLoad] });
       case "SEARCH_RESULT":
-        const track = res.tracks[0];
-        player.queue.add(track);
+        const track = res.tracks[0]
+        const size = Number(player.queue.size) - 1
+        player.queue.add(track)
 
-        if (!player.playing && !player.paused && !player.queue.length) {
-          const searchResult = new MessageEmbed()
-            .setColor(this.client.embedColor)
-            .setTimestamp()
-            .setThumbnail(track.displayThumbnail("3"))
-            .setDescription(
-              `[${track.title}](${track.uri}) - \`[${convertTime(
-                track.duration
-              )}]\` \n Adicionada à fila`
-            );
+        if (!player.playing && !player.paused && !player.queue.length)
+          await player.play()
 
-          player.play();
-          return await interaction.reply({ embeds: [searchResult] });
-        } else {
-          const thing = new MessageEmbed()
-            .setColor(this.client.embedColor)
-            .setTimestamp()
-            .setThumbnail(track.displayThumbnail("3"))
-            .setDescription(
-              `[${track.title}](${track.uri}) - \`[${convertTime(
-                track.duration
-              )}]\` \n Adicionada à fila`
-            );
-          return await interaction.reply({ embeds: [thing] });
-        }
+        const reply = await interaction.reply({
+          embeds: [
+            new MessageEmbed()
+              .setColor(this.client.embedColor)
+              .setTimestamp()
+              .setThumbnail(track.displayThumbnail("3"))
+              .setTitle(`Música adicionada: ${track.title}`)
+              .addFields(
+                {
+                  name: "Duração:",
+                  value: `${convertTime(track.duration)}`,
+                  inline: true,
+                },
+                {
+                  name: "Pedido por:",
+                  value: `${track.requester}`,
+                  inline: true,
+                }
+              )
+              .setURL(track.uri)
+          ],
+          components: [
+            new MessageActionRow().addComponents([
+              new MessageButton()
+                .setStyle("DANGER")
+                .setLabel("️X️")
+                .setCustomId("REMOVE"),
+            ]),
+          ],
+          fetchReply: true,
+        })
+
+        const collector = await reply.createMessageComponentCollector({
+          time: 1 * 60000,
+        })
+
+        collector.once("collect", async () => {
+          if (player.queue[0]) {
+            const removed = player.queue[toNumber(size + 1)]
+            if (size < player.queue.size) {
+              player.queue.remove(toNumber(size + 1))
+            }
+            return await interaction.editReply({
+              embeds: [
+                new MessageEmbed()
+                  .setColor("RED")
+                  .setDescription({name: `[${removed.title}](${removed.uri}) removida da fila`})
+              ],
+              components: [],
+            })
+          } else {
+            player.stop()
+            return await interaction.editReply({
+              embeds: [
+                new MessageEmbed()
+                  .setColor("RED")
+                  .setDescription({name: `[${player.queue.current.title}](${player.queue.current.uri})`})
+              ],
+            })
+          }
+        })
+        collector.once("end", () => {
+          reply.delete()
+        })
     }
-
-    if (!res?.tracks?.[0])
-      return interaction.reply({
-        content: `Música não encontrada!`,
-        ephemeral: true,
-      });
-
-    player.queue.add(res.tracks[0]);
-
-    if (!player.playing && !player.paused) player.play();
-
-    return interaction.reply({
-      content: `\`${res.tracks[0].title}\` adicionada à fila.`,
-    });
-  };
-};
+  }
+}
