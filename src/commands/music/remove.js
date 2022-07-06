@@ -1,7 +1,6 @@
 const { MessageEmbed } = require("discord.js")
 const Command = require("../../structures/Command")
-
-const { connectedChannel } = require("../../utils/verify.js")
+const { connectedChannel, somethingPlaying } = require("../../utils/verify.js")
 
 module.exports = class extends Command {
   constructor(client) {
@@ -25,19 +24,10 @@ module.exports = class extends Command {
 
     const player = this.client.manager.get(interaction.guild.id)
 
-    let args = interaction.options.getNumber("number")
+    const isPlaying = await somethingPlaying(player,interaction)
+    if(!isPlaying) return
 
-    
-    if (!player || !player.queue.current) {
-      return await interaction.reply({
-        embeds: [
-          new MessageEmbed()
-            .setColor("RED")
-            .setTitle(`Nada tocando no momento!`),
-        ],
-        ephemeral: true,
-      })
-    }
+    let args = interaction.options.getNumber("number")
 
     args = (Number(args) - 1)
     if (args > player.queue.size) {

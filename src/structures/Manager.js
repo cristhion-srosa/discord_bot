@@ -7,6 +7,8 @@ const apple = require("erela.js-apple")
 const deezer = require("erela.js-deezer")
 const Spotify = require("better-erela.js-spotify").default
 
+require("../utils/lavafilter")
+
 clientID = process.env.SPOTIFY_ID
 clientSecret = process.env.SPOTIFY_SECRET
 

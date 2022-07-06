@@ -1,11 +1,7 @@
 const { MessageEmbed, MessageActionRow, MessageButton } = require("discord.js")
-
 const { toNumber } = require("lodash")
-
 const Command = require("../../structures/Command")
-
 const { convertTime } = require("../../utils/convert.js")
-
 const { connectedChannel } = require("../../utils/verify.js")
 
 module.exports = class extends Command {
@@ -177,7 +173,7 @@ module.exports = class extends Command {
               embeds: [
                 new MessageEmbed()
                   .setColor("RED")
-                  .setDescription({name: `[${removed.title}](${removed.uri}) removida da fila`})
+                  .setDescription( `[${removed.title}](${removed.uri}) removida da fila` )
               ],
               components: [],
             })
@@ -187,7 +183,7 @@ module.exports = class extends Command {
               embeds: [
                 new MessageEmbed()
                   .setColor("RED")
-                  .setDescription({name: `[${player.queue.current.title}](${player.queue.current.uri})`})
+                  .setDescription( `[${player.queue.current.title}](${player.queue.current.uri})` )
               ],
             })
           }
