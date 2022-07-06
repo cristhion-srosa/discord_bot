@@ -2,6 +2,7 @@ const { MessageEmbed, MessageActionRow, MessageButton } = require("discord.js")
 const Command = require("../../structures/Command")
 const { convertTime } = require("../../utils/convert")
 const load = require("lodash")
+const { somethingPlaying } = require("../../utils/verify.js")
 
 module.exports = class extends Command {
   constructor(client) {
@@ -22,21 +23,14 @@ module.exports = class extends Command {
   run = async (interaction) => {
     const player = this.client.manager.get(interaction.guild.id)
 
-    if (!player || !player.queue)
-      return await interaction.reply({
-          embeds: [
-            new MessageEmbed()
-              .setColor("RED")
-              .setTitle("Nada tocando no momento!"),
-          ],
-          ephemeral: true,
-        }).catch(() => {})
+    const isPlaying = await somethingPlaying(player,interaction)
+    if(!isPlaying) return
 
     if (!player.queue.size || player.queue.size === 0) {
       return await interaction.reply({
         embeds: [
           new MessageEmbed()
-            .setTitle({name: `Agora tocando: ${player.queue.current.title}`})
+            .setTitle(`Agora tocando: ${player.queue.current.title}`)
             .addFields(
               {
                 name: `Duração: `,
@@ -51,7 +45,7 @@ module.exports = class extends Command {
             )
             .setColor(this.client.embedColor)
             .setTimestamp()
-            .setThumbnail(track.displayThumbnail("3"))
+            .setThumbnail(player.queue.current.displayThumbnail("3"))
             .setURL(player.queue.current.uri)
         ],
       }).catch(() => {})
