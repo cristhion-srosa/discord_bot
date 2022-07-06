@@ -96,6 +96,10 @@ module.exports = class extends Command {
         player.set8D()
         break
     }
-    return interaction.reply({ embeds: [filterEmbed] })
+    const reply = await interaction.reply({ embeds: [filterEmbed] })
+    setTimeout(() => {
+      if(reply) reply.delete()
+    }, 1 * 60000);
+    return 
   }
 }
