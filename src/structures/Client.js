@@ -16,10 +16,10 @@ module.exports = class extends Client {
   }
 
   regCommands() {
-    this.guilds.cache.get(process.env.TEST_GUILD).commands.set(this.commands);
-    // this.application.commands
-    //   .set(this.commands)
-    //   .then(() => console.log("comandos registrados"))
+    //this.guilds.cache.get(process.env.TEST_GUILD).commands.set(this.commands);
+    this.application.commands
+      .set(this.commands)
+      .then(() => console.log("comandos registrados"))
   }
 
   loadCommands(path = "src/commands") {
