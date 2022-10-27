@@ -1,26 +1,28 @@
-const { MessageEmbed, MessageActionRow, MessageButton } = require("discord.js")
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ApplicationCommandType, ApplicationCommandOptionType } = require("discord.js")
 const { toNumber } = require("lodash")
 const Command = require("../../structures/Command")
-const { convertTime } = require("../../utils/convert.js")
-const { connectedChannel } = require("../../utils/verify.js")
+const { convertTime } = require("../../utils/convert")
+const { connected } = require("../../utils/verify")
 
 module.exports = class extends Command {
   constructor(client) {
     super(client, {
       name: "play",
       description: "Toque uma música!",
+      type: ApplicationCommandType.ChatInput,
       options: [
         {
           name: "música",
-          description: "Música que você deseja ouvir",
-          type: "STRING",
-          required: true,
-        },
-      ],
+          description: "Link ou nome da música que deseja tocar",
+          type: ApplicationCommandOptionType.String,
+          required: true
+        }
+      ]
     })
   }
+
   run = async (interaction) => {
-    const isConnected = await connectedChannel(interaction)
+    const isConnected = await connected(interaction)
     if (!isConnected) return
 
     const search = interaction.options.getString("música")
@@ -32,27 +34,26 @@ module.exports = class extends Command {
       selfDeafen: true,
     })
 
-    if (player.state === "DISCONNECTED") player.connect()
+    if(player.state === "DISCONNECTED") player.connect()
 
     let res
 
-    try {
+    try{
       res = await this.client.manager.search(search, interaction.user)
 
       if (res.loadType === "LOAD_FAILED") {
-        if (!player.queue.current) player.destroy()
-        throw res.exception
+          if (!player.queue.current) player.destroy()
+          throw res.exception
       }
     } catch (err) {
       return interaction.reply({
         embeds: [
-          new MessageEmbed()
-            .setColor("RED")
+          new EmbedBuilder()
+            .setColor(this.client.errorColor)
             .setTitle("Aconteceu um erro ao buscar a música!")
             .setDescription(`Erro: ${err.message}`)
-            .setTimestamp(),
-        ],
-        ephemeral: true,
+            .setTimestamp()
+        ]
       })
     }
 
@@ -61,14 +62,13 @@ module.exports = class extends Command {
         if (!player.queue.current) player.destroy()
         return await interaction.reply({
           embeds: [
-            new MessageEmbed()
-              .setColor("RED")
+            new EmbedBuilder()
+              .setColor(this.client.errorColor)
+              .setTitle("Nenhum resultado encontrado!")
               .setTimestamp()
-              .setTitle("Nenhum resultado encontrado!"),
-          ],
-          ephemeral: true,
+          ], ephemeral: true,
         })
-
+          
       case "PLAYLIST_LOADED":
         const playlistSize = Number(player.queue.size) - 1
         player.queue.add(res.tracks)
@@ -77,59 +77,52 @@ module.exports = class extends Command {
 
         const playlistReply = await interaction.reply({
           embeds: [
-            new MessageEmbed()
+            new EmbedBuilder()
               .setColor(this.client.embedColor)
               .setTimestamp()
               .setTitle("Playlist adicionada à fila")
-              .setDescription( `[${res.playlist.name}](${search}) - \`[${convertTime(res.playlist.duration)}]\`` )
+              .setDescription(`[${res.playlist.name}](${search}) - \`${convertTime(res.playlist.duration)}\``)
           ],
           components: [
-            new MessageActionRow().addComponents([
-              new MessageButton()
-                .setStyle("DANGER")
-                .setLabel("️X️")
-                .setCustomId("REMOVE"),
-            ]),
-          ],
-          fetchReply: true,
+            new ActionRowBuilder().addComponents([
+              new ButtonBuilder()
+                .setStyle("Danger")
+                .setLabel("X")
+                .setCustomId("REMOVE")
+            ])
+          ], fetchReply: true,
         })
 
-        const playlistCollector =
-          await playlistReply.createMessageComponentCollector({
-            time: 1 * 60000,
-          })
+        const playlistCollector = await playlistReply.createMessageComponentCollector({time: 1 * 60000})
 
-        playlistCollector.once("collect", async () => {
+        playlistCollector.once("collect", async (button) => {
+          await button.deferUpdate().catch(() => {})
           const removeds = Number(player.queue.size - playlistSize) - 1
-          for (let i = player.queue.size; i > playlistSize; i--) {
-            player.queue.remove(toNumber(i))
-          }
+          for (let i = player.queue.size; i > playlistSize; i --) player.queue.remove(toNumber(i))
           await interaction.editReply({
             embeds: [
-              new MessageEmbed()
-                .setColor("RED")
-                .setTitle(`${removeds} músicas removidas!`),
-            ],
+              new EmbedBuilder()
+                .setColor(this.client.errorColor)
+                .setTitle(`${removeds} músicas removidas!`)
+            ]
           })
         })
+        
+        playlistCollector.once("end", () => {playlistReply.delete().catch(() => {})})
 
-        playlistCollector.once("end", () => {
-          playlistReply.delete()
-        })
-
-        break
+      break
+    
       case "TRACK_LOADED":
       case "SEARCH_RESULT":
         const track = res.tracks[0]
-        const size = Number(player.queue.size) - 1
+        const size = Number(player.queue.size) -1 
         player.queue.add(track)
 
-        if (!player.playing && !player.paused && !player.queue.length)
-          await player.play()
+        if(!player.playing && !player.paused && !player.queue.length) await player.play()
 
         const reply = await interaction.reply({
           embeds: [
-            new MessageEmbed()
+            new EmbedBuilder()
               .setColor(this.client.embedColor)
               .setTimestamp()
               .setThumbnail(track.displayThumbnail("3"))
@@ -138,32 +131,29 @@ module.exports = class extends Command {
                 {
                   name: "Duração:",
                   value: `${convertTime(track.duration)}`,
-                  inline: true,
+                  inline: true
                 },
                 {
                   name: "Pedido por:",
                   value: `${track.requester}`,
-                  inline: true,
+                  inline: true
                 }
-              )
-              .setURL(track.uri)
+              ).setURL(track.uri)
           ],
           components: [
-            new MessageActionRow().addComponents([
-              new MessageButton()
-                .setStyle("DANGER")
-                .setLabel("️X️")
-                .setCustomId("REMOVE"),
-            ]),
-          ],
-          fetchReply: true,
-        })
+            new ActionRowBuilder().addComponents([
+              new ButtonBuilder()
+                .setStyle("Danger")
+                .setLabel("X")
+                .setCustomId("REMOVE")
+            ])
+          ], fetchReply: true
+        })  
 
-        const collector = await reply.createMessageComponentCollector({
-          time: 1 * 60000,
-        })
+        const collector = await reply.createMessageComponentCollector({time: 1 * 60000,})
 
-        collector.once("collect", async () => {
+        collector.once("collect", async (button) => {
+          await button.deferUpdate().catch(() => {})
           if (player.queue[0]) {
             const removed = player.queue[toNumber(size + 1)]
             if (size < player.queue.size) {
@@ -171,25 +161,25 @@ module.exports = class extends Command {
             }
             return await interaction.editReply({
               embeds: [
-                new MessageEmbed()
-                  .setColor("RED")
-                  .setDescription( `[${removed.title}](${removed.uri}) removida da fila` )
+                new EmbedBuilder()  
+                  .setColor(this.client.errorColor)
+                  .setDescription(`[${removed.title}](${removed.uri}) removida da fila`)
               ],
-              components: [],
+              components: []
             })
           } else {
             player.stop()
             return await interaction.editReply({
               embeds: [
-                new MessageEmbed()
-                  .setColor("RED")
-                  .setDescription( `[${player.queue.current.title}](${player.queue.current.uri})` )
-              ],
+                new EmbedBuilder()
+                  .setColor(this.client.errorColor)
+                  .setDescription(`[${player.queue.current.title}](${player.queue.current.uri})`)
+              ]
             })
           }
         })
         collector.once("end", () => {
-          reply.delete()
+          reply.delete().catch(() => {})
         })
     }
   }

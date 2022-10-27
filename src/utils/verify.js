@@ -1,27 +1,27 @@
-const { MessageEmbed } = require("discord.js")
+const { EmbedBuilder } = require("discord.js")
 module.exports = {
-  connectedChannel: async function (interaction) {
+  connected: async function (interaction) {
+    if(!interaction.guild) {
+      return
+    }
     if (!interaction.member.voice.channel) {
       interaction.reply({
         embeds: [
-          new MessageEmbed()
-            .setColor("RED")
-            .setTitle(
-              `Você precisa estar em um canal de voz para usar esse comando!!`
-            ),
+          new EmbedBuilder()
+            .setColor(0xFF0000)
+            .setTitle(`Você precisa estar em um canal de voz para usar esse comando!!`),
         ],
         ephemeral: true,
       })
       return false
     }
-    if (interaction.guild.me.voice.channel &&interaction.guild.me.voice.channel.id !==interaction.member.voice.channel.id) {
+    
+    if (interaction.guild.myVoiceChannel &&interaction.guild.myVoiceChannel.id !== interaction.member.myVoiceChannel.id) {
       interaction.reply({
         embeds: [
-          new MessageEmbed()
-            .setColor("RED")
-            .setTitle(
-              `Você precisa estar no mesmo canal de voz que eu para utilizar este comando!`
-            ),
+          new EmbedBuilder()
+            .setColor(0xFF0000)
+            .setTitle(`Você precisa estar no mesmo canal de voz que eu para utilizar este comando!`),
         ],
         ephemeral: true,
       })
@@ -29,12 +29,12 @@ module.exports = {
     }
     return true
   },
-  somethingPlaying: async function (player, interaction) {
+  playing: async function (player, interaction) {
     if (!player || !player.queue ||!player.queue.current) {
       await interaction.reply({
         embeds: [
-          new MessageEmbed()
-            .setColor("RED")
+          new EmbedBuilder()
+            .setColor(0xFF0000)
             .setTitle(`Nada tocando no momento!`),
         ],
         ephemeral: true,

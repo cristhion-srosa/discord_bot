@@ -1,33 +1,38 @@
-const { MessageEmbed } = require("discord.js")
+const { EmbedBuilder, ApplicationCommandType } = require("discord.js")
 const Command = require("../../structures/Command")
-const { connectedChannel, somethingPlaying } = require("../../utils/verify.js")
+const { connected, playing } = require("../../utils/verify")
+const { deleteMessage } = require("../../utils/timeout")
 
 module.exports = class extends Command {
   constructor(client) {
     super(client, {
       name: "stop",
-      description: "Para a música e limpa a fila",
+      description: "Termina a música e limpa a fila!",
+      type: ApplicationCommandType.ChatInput
     })
   }
 
   run = async (interaction) => {
-    const isConnected = await connectedChannel(interaction)
+    const isConnected = await connected(interaction)
     if(!isConnected) return
 
     const player = this.client.manager.get(interaction.guild.id)
 
-    const isPlaying = await somethingPlaying(player,interaction)
-    if(!isPlaying) return
+    const isPlaying = await playing(player,interaction)
+    if (!isPlaying) return
 
     player.stop()
     player.queue.clear()
-
-    return await interaction.reply({
+    
+    let message = await interaction.reply({
       embeds: [
-        new MessageEmbed()
+        new EmbedBuilder()
           .setColor(this.client.embedColor)
-          .setTitle(`Música terminada e fila limpa!`),
+          .setTitle(`Música terminada e fila limpa!`)
       ],
+      fetchReply: true
     })
+    deleteMessage(message, 60000)
+    return
   }
 }

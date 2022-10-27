@@ -1,45 +1,53 @@
-const { MessageEmbed } = require("discord.js")
+const { EmbedBuilder, ApplicationCommandType } = require("discord.js")
 const Command = require("../../structures/Command")
-const { connectedChannel, somethingPlaying } = require("../../utils/verify.js")
+const { connected, playing } = require("../../utils/verify")
+const { deleteMessage } = require("../../utils/timeout")
 
 module.exports = class extends Command {
   constructor(client) {
     super(client, {
       name: "pause",
       description: "Pausa a música que está tocando",
+      type: ApplicationCommandType.ChatInput
     })
   }
 
   run = async (interaction) => {
-    const isConnected = await connectedChannel(interaction)
+    const isConnected = await connected(interaction)
     if (!isConnected) return
 
     const player = this.client.manager.get(interaction.guild.id)
-
-    const isPlaying = await somethingPlaying(player,interaction)
-    if(!isPlaying) return
+    
+    const isPlaying = await playing(player, interaction)
+    if (!isPlaying) return
 
     if (player.paused) {
-      return await interaction.reply({
+      let message = await interaction.reply({
         embeds: [
-          new MessageEmbed()
-            .setColor("RED")
+          new EmbedBuilder()
+            .setColor(this.client.errorColor)
             .setTitle("A música já está pausada!")
-            .setDescription("Use /resume para despausar")
-            .setTimestamp(),
-        ]
+            .setDescription("A música já está pausada!")
+            .setTimestamp()
+        ],
+        fetchreply: true
       })
+      deleteMessage(message, 60000)
+      return
     }
 
     player.pause(true)
 
-    return await interaction.reply({
+    let message = await interaction.reply({
       embeds: [
-        new MessageEmbed()
-          .setColor("RED")
+        new EmbedBuilder()
+          .setColor(this.client.errorColor)
+          .setTitle("Música pausada!")
           .setTimestamp()
-          .setTitle("Música pausada"),
       ],
+      fetchReply: true
     })
+    deleteMessage(message, 60000)
+    return
   }
 }

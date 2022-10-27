@@ -1,35 +1,36 @@
-const { MessageEmbed, MessageActionRow, MessageButton } = require("discord.js")
-const Command = require("../../structures/Command")
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ApplicationCommandType, ApplicationCommandOptionType} = require("discord.js")
+const Command = require ("../../structures/Command")
 const { convertTime } = require("../../utils/convert")
 const load = require("lodash")
-const { somethingPlaying } = require("../../utils/verify.js")
+const { playing } = require("../../utils/verify")
 
 module.exports = class extends Command {
   constructor(client) {
     super(client, {
       name: "queue",
-      description: "Mostra a fila de música do server!",
+      description: "Mostra a fila de músicas do server!",
+      type: ApplicationCommandType.ChatInput,
       options: [
         {
           name: "page",
-          type: "NUMBER",
-          required: false,
-          description: `A página da fila que deseja ver`,
-        },
-      ],
+          description: 'A página da fila que deseja ver',
+          type: ApplicationCommandOptionType.Integer,
+          required: false
+        }
+      ]
     })
   }
 
   run = async (interaction) => {
     const player = this.client.manager.get(interaction.guild.id)
 
-    const isPlaying = await somethingPlaying(player,interaction)
-    if(!isPlaying) return
+    const isPlaying = await playing(player, interaction)
+    if (!isPlaying) return
 
-    if (!player.queue.size || player.queue.size === 0) {
+    if (!player.queue.size || player.queue.size === 0){
       return await interaction.reply({
         embeds: [
-          new MessageEmbed()
+          new EmbedBuilder()
             .setTitle(`Agora tocando: ${player.queue.current.title}`)
             .addFields(
               {
@@ -39,7 +40,7 @@ module.exports = class extends Command {
               },
               {
                 name: "Pedido por: ",
-                value: `${player.queue.current.requester}`,
+                value: `${convertTime(player.queue.current.duration)}`,
                 inline: true,
               }
             )
@@ -47,15 +48,10 @@ module.exports = class extends Command {
             .setTimestamp()
             .setThumbnail(player.queue.current.displayThumbnail("3"))
             .setURL(player.queue.current.uri)
-        ],
+        ]
       }).catch(() => {})
     } else {
-      const mapping = player.queue.map(
-        (t, i) =>
-          `\` ${++i} • [${t.title}](${t.uri}) • \`[ ${convertTime(
-            t.duration
-          )} ] • [${t.requester}]`
-      )
+      const mapping = player.queue.map((t, i) => ` **${++i}:**  **[${t.title}](${t.uri})** | [ ${convertTime( t.duration)}]\n`)
 
       const chunk = load.chunk(mapping, 10)
       const pages = chunk.map((s) => s.join("\n"))
@@ -68,102 +64,99 @@ module.exports = class extends Command {
       if (player.queue.size < 10 || player.queue.totalsize < 10) {
         return await interaction.reply({
           embeds: [
-            new MessageEmbed()
+            new EmbedBuilder()
               .setTitle(`Fila do servidor ${interaction.guild.name}`)
               .setColor(this.client.embedColor)
-              .setDescription(`Agora tocando: [${player.queue.current.title}](${player.queue.current.uri}) - [${convertTime(player.queue.current.duration)}]\n\n 
-                pedido por ${player.queue.current.requester.tag.toString()}]\n\n**Músicas na fila**\n${pages[page]}`)
-              .setFooter({ text: `Page ${page + 1}/${pages.length}` }, interaction.user.displayAvatarURL({ dynamic: true }))
+              .setDescription(`Agora tocando: [${player.queue.current.title}](${player.queue.current.uri}) - [${convertTime(player.queue.current.duration)}]\n\n
+                pedido por ${player.queue.current.requester}\n\n**Músicas na fila**\n${pages[page]}`)
+              .setFooter({ text: `page ${page + 1}/${pages.length}`}, interaction.user.displayAvatarURL({ dynamic: true}))
               .setThumbnail(player.queue.current.thumbnail)
-              .setTimestamp(),
-          ],
+              .setTimestamp()
+          ]
         }).catch(() => {})
       } else {
-        const but1 = new MessageButton()
-          .setCustomId("queue_cmd_but_1_app")
+        const but1 = new ButtonBuilder()
+          .setCustomId("queue_1")
           .setEmoji("⏭️")
-          .setStyle("PRIMARY")
+          .setStyle("Primary")
 
-        const but2 = new MessageButton()
-          .setCustomId("queue_cmd_but_2_app")
+        const but2 = new ButtonBuilder()
+          .setCustomId("queue_2")
           .setEmoji("⏮️")
-          .setStyle("PRIMARY")
+          .setStyle("Primary")
 
-        const but3 = new MessageButton()
-          .setCustomId("queue_cmd_but_3_app")
+        const but3 = new ButtonBuilder()
+          .setCustomId("queue_3")
           .setEmoji("⏹️")
-          .setStyle("DANGER")
+          .setStyle("Danger")
 
         const reply = await interaction.reply({
           embeds: [
-            new MessageEmbed()
+            new EmbedBuilder()
               .setTitle(`Fila do servidor ${interaction.guild.name}`)
               .setColor(this.client.embedColor)
-              .setDescription(`Agora tocando: [${player.queue.current.title}](${player.queue.current.uri}) - [${convertTime(player.queue.current.duration)}]\n\n 
-                pedido por ${player.queue.current.requester.tag.toString()}]\n\n**Músicas na fila**\n${pages[page]}`)
-              .setFooter({ text: `Page ${page + 1}/${pages.length}` }, interaction.user.displayAvatarURL({ dynamic: true }))
+              .setDescription(`Agora tocando: [${player.queue.current.title}](${player.queue.current.uri}) - [${convertTime(player.queue.current.duration)}]\n 
+                Pedido por: ${player.queue.current.requester}\n\nDuração da playlist: **${convertTime(player.queue.duration)}**\n\n**Músicas na fila**\n${pages[page]}`)
+              .setFooter({ text: `Page ${page + 1}/${pages.length}`}, interaction.user.displayAvatarURL({ dynamic: true }))
               .setThumbnail(player.queue.current.thumbnail)
-              .setTimestamp(),
+              .setTimestamp()
           ],
           components: [
-            new MessageActionRow()
-              .addComponents([but2, but3, but1]),
+            new ActionRowBuilder()
+              .addComponents([but2, but3, but1])
           ],
           fetchReply: true,
         }).catch(() => {})
 
-        const collector = interaction.channel.createMessageComponentCollector({
-          time: 60000 * 5,
-          idle: 30e3,
-        })
+        const collector = interaction.channel.createMessageComponentCollector({time: 5 * 60000, idle: 30e3})
 
         collector.on("collect", async (button) => {
-          if (button.customId === "queue_cmd_but_1_app") {
+          if (button.customId === "queue_1"){
             await button.deferUpdate().catch(() => {})
-            page = page + 1 < pages.length ? ++page : 0
+            page = page + 1 < pages.length ? ++ page : 0
 
-            await interaction.editReply({
+            return await interaction.editReply({
               embeds: [
-                new MessageEmbed()
+                new EmbedBuilder()
                   .setColor(this.client.embedColor)
                   .setDescription(`Agora tocando: [${player.queue.current.title}](${player.queue.current.uri}) - [${convertTime(player.queue.current.duration)}]\n\n 
-                    pedido por ${player.queue.current.requester.tag.toString()}]\n\n**Músicas na fila**\n${pages[page]}`)
-                  .setFooter({ text: `Page ${page + 1}/${pages.length}` }, interaction.user.displayAvatarURL({ dynamic: true }))
+                    pedido por ${player.queue.current.requester}\n\n**Músicas na fila**\n${pages[page]}`)
+                  .setFooter({ text: `Page ${page + 1}/${pages.length}`})
                   .setThumbnail(player.queue.current.thumbnail)
-                  .setTimestamp(),
+                  .setTimestamp()
               ],
               components: [
-                new MessageActionRow()
-                  .addComponents([but2, but3, but1]),
-              ],
+                new ActionRowBuilder()
+                  .addComponents([but2, but3, but1])
+              ]
             }).catch(() => {})
-          } else if (button.customId === "queue_cmd_but_2_app") {
+          } else if (button.customId === "queue_2") {
             await button.deferUpdate().catch(() => {})
             page = page > 0 ? --page : pages.length - 1
 
-            await interaction.editReply({
+            return await interaction.editReply({
               embeds: [
-                new MessageEmbed()
+                new EmbedBuilder()
                   .setColor(this.client.embedColor)
                   .setDescription(`Agora tocando: [${player.queue.current.title}](${player.queue.current.uri}) - [${convertTime(player.queue.current.duration)}]\n\n 
-                    pedido por ${player.queue.current.requester.tag.toString()}]\n\n**Músicas na fila**\n${pages[page]}`)
-                  .setFooter({ text: `Page ${page + 1}/${pages.length}` }, interaction.user.displayAvatarURL({ dynamic: true }))
+                    pedido por ${player.queue.current.requester}\n\n**Músicas na fila**\n${pages[page]}`)
+                  .setFooter({ text: `Page ${page + 1}/${pages.length}`}, interaction.user.displayAvatarURL({ dynamic: true}))
                   .setThumbnail(player.queue.current.thumbnail)
-                  .setTimestamp(),
+                  .setTimestamp()
               ],
               components: [
-                new MessageActionRow()
-                  .addComponents([but2, but3, but1]),
-              ],
+                new ActionRowBuilder()
+                  .addComponents([but2, but3, but1])
+              ]
             }).catch(() => {})
-          } else if (button.customId === "queue_cmd_but_3_app") {
+          } else if (button.customId === "queue_3") {
             await button.deferUpdate().catch(() => {})
             await collector.stop()
           } else return
         })
 
-        collector.on("end", async () => {
-          reply.delete()
+        collector.once("end", async () => {
+          reply.delete().catch(() => {})
         })
       }
     }

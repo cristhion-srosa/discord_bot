@@ -1,34 +1,36 @@
-const { MessageEmbed } = require("discord.js")
+const { EmbedBuilder, ApplicationCommandType, ApplicationCommandOptionType, lazy } = require("discord.js")
 const Command = require("../../structures/Command")
-const { connectedChannel, somethingPlaying } = require("../../utils/verify.js")
+const { connected, playing } = require("../../utils/verify")
+const { deleteMessage } = require("../../utils/timeout")
 
 module.exports = class extends Command {
   constructor(client) {
     super(client, {
       name: "filters",
-      description: "Altera os filtros da música",
+      description: "Altera os filtros da música!",
+      type: ApplicationCommandType.ChatInput,
       options: [
         {
           name: "filter",
           description: "Filtros disponíveis",
-          type: "STRING",
+          type: ApplicationCommandOptionType.String,
           required: true,
           choices: [
             {
-              name: "Limpar filtros",
+              name: "lLimpar Filtros",
               value: "clear",
             },
             {
               name: "Bass",
-              value: "bass",
+              value: "bass"
             },
             {
               name: "Night Core",
-              value: "nightcore",
+              value: "nightcore"
             },
             {
               name: "Pitch",
-              value: "pitch",
+              value: "pitch"
             },
             {
               name: "8D",
@@ -36,70 +38,70 @@ module.exports = class extends Command {
             },
             {
               name: "Bassboost",
-              value: "bassboost",
+              value: "bassboost"
             },
             {
-              name: "Speed",
-              value: "speed",
+              name: "speed",
+              value: "speed"
             },
             {
               name: "Vaporwave",
-              value: "vaporwave",
-            },
-          ],
-        },
-      ],
+              value: "vaporwave"
+            }
+          ]
+        }
+      ]
     })
   }
 
   run = async (interaction) => {
-    const isConnected = await connectedChannel(interaction)
+    const isConnected = await connected(interaction)
     if(!isConnected) return
 
     const filter = interaction.options.getString("filter")
 
     const player = this.client.manager.get(interaction.guild.id)
 
-    const isPlaying = await somethingPlaying(player,interaction)
+    const isPlaying = await playing(player, interaction)
     if(!isPlaying) return
-    
-    let filterEmbed = new MessageEmbed()
+
+    let filterEmbed = new EmbedBuilder()
       .setColor(this.client.embedColor)
       .setTimestamp()
-      filterEmbed.setTitle(`Modo ${filter} ativado`)
-    switch (filter){
-      
+      .setTitle(`Modo ${filter} ativado`)
+
+    switch (filter) {
       case 'bass':
         player.setBassboost(true)
-        break
-      case 'bassboost':
-        var bands = new Array(7).fill(null).map((_, i) => ({ band: i, gain: 0.25 }));
-        player.setEQ(...bands);
-        break
+      break
+      case 'bassboost': 
+        var bands = new Array(7).fill(null).map((_, i) => ({ band: i, gain: 0.25 }))
+        player.setEQ( ...bands)
+      break
       case 'nightcore':
         player.setNightcore(true)
-        break
+      break
       case 'pitch':
         player.setPitch()
-        break
+      break
       case 'vaporwave':
         player.setVaporwave(true)
-        break
-      case 'clear':
+      break
+      case "clear":
         player.clearEffects()
         filterEmbed.setTitle(`Filtros limpos!`)
-        break
+      break
       case 'speed':
         player.setSpeed()
-        break
+      break
       case '8d':
         player.set8D()
-        break
+      break
     }
-    const reply = await interaction.reply({ embeds: [filterEmbed] })
-    setTimeout(() => {
-      if(reply) reply.delete()
-    }, 1 * 60000);
-    return 
+    const reply = await interaction.reply({ embeds: [filterEmbed], fetchReply: true})
+
+    deleteMessage(reply, 60000)
+
+    return
   }
 }

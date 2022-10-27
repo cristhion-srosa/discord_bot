@@ -12,29 +12,25 @@ module.exports = class extends Client {
     this.loadCommands()
     this.loadEvents()
     this.manager = erelaManager(this)
+    this.errorColor = process.env.ERROR_COLOR
     this.embedColor = process.env.COLOR
   }
 
   regCommands() {
-    //this.guilds.cache.get(process.env.TEST_GUILD).commands.set(this.commands);
     this.application.commands
       .set(this.commands)
       .then(() => console.log("comandos registrados"))
   }
 
-  loadCommands(path = "src/commands") {
+  loadCommands(path = "src/commands"){
     const categories = readdirSync(path)
 
     for (const category of categories) {
       const commands = readdirSync(`${path}/${category}`)
 
       for (const command of commands) {
-        const commandClass = require(join(
-          process.cwd(),
-          `${path}/${category}/${command}`
-        ))
+        const commandClass = require(join(process.cwd(),`${path}/${category}/${command}`))
         const cmd = new commandClass(this)
-
         this.commands.push(cmd)
       }
     }
@@ -43,14 +39,11 @@ module.exports = class extends Client {
   loadEvents(path = "src/events") {
     const categories = readdirSync(path)
 
-    for (const category of categories) {
+    for (const category of categories){
       const events = readdirSync(`${path}/${category}`)
 
       for (const event of events) {
-        const eventClass = require(join(
-          process.cwd(),
-          `${path}/${category}/${event}`
-        ))
+        const eventClass = require(join(process.cwd(),`${path}/${category}/${event}`))
         const evt = new eventClass(this)
 
         this.on(evt.name, evt.run)
