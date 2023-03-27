@@ -1,7 +1,7 @@
 const { Structure } = require('erela.js')
 
 module.exports = Structure.extend('Player', Player => {
-  class lava extends Player {
+  class Lava extends Player {
     constructor ( ... args ) {
       super( ... args )
       this.speed = 1
@@ -163,5 +163,5 @@ module.exports = Structure.extend('Player', Player => {
 		}
   }
 
-  return lava
+  return Lava
 })

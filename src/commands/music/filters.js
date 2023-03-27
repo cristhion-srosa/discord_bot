@@ -75,7 +75,7 @@ module.exports = class extends Command {
         player.setBassboost(true)
       break
       case 'bassboost': 
-        var bands = new Array(7).fill(null).map((_, i) => ({ band: i, gain: 0.25 }))
+        let bands = new Array(7).fill(null).map((_, i) => ({ band: i, gain: 0.25 }))
         player.setEQ( ...bands)
       break
       case 'nightcore':
@@ -101,7 +101,5 @@ module.exports = class extends Command {
     const reply = await interaction.reply({ embeds: [filterEmbed], fetchReply: true})
 
     deleteMessage(reply, 60000)
-
-    return
   }
 }

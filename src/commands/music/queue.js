@@ -23,12 +23,12 @@ module.exports = class extends Command {
 
   run = async (interaction) => {
     const player = this.client.manager.get(interaction.guild.id)
-
+    
     const isPlaying = await playing(player, interaction)
     if (!isPlaying) return
 
-    if (!player.queue.size || player.queue.size === 0){
-      return await interaction.reply({
+    if ( player.queue.size === 0){
+      return interaction.reply({
         embeds: [
           new EmbedBuilder()
             .setTitle(`Agora tocando: ${player.queue.current.title}`)
@@ -62,7 +62,7 @@ module.exports = class extends Command {
       if (page < 0) page = 0
 
       if (player.queue.size < 10 || player.queue.totalsize < 10) {
-        return await interaction.reply({
+        return interaction.reply({
           embeds: [
             new EmbedBuilder()
               .setTitle(`Fila do servidor ${interaction.guild.name}`)
@@ -115,7 +115,7 @@ module.exports = class extends Command {
             await button.deferUpdate().catch(() => {})
             page = page + 1 < pages.length ? ++ page : 0
 
-            return await interaction.editReply({
+            return interaction.editReply({
               embeds: [
                 new EmbedBuilder()
                   .setColor(this.client.embedColor)
@@ -134,7 +134,7 @@ module.exports = class extends Command {
             await button.deferUpdate().catch(() => {})
             page = page > 0 ? --page : pages.length - 1
 
-            return await interaction.editReply({
+            return interaction.editReply({
               embeds: [
                 new EmbedBuilder()
                   .setColor(this.client.embedColor)
@@ -149,10 +149,10 @@ module.exports = class extends Command {
                   .addComponents([but2, but3, but1])
               ]
             }).catch(() => {})
-          } else if (button.customId === "queue_3") {
+          } else {
             await button.deferUpdate().catch(() => {})
             await collector.stop()
-          } else return
+          }
         })
 
         collector.once("end", async () => {

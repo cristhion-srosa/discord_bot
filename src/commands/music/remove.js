@@ -31,7 +31,7 @@ module.exports = class extends Command {
     let args = interaction.options.getNumber("number")
     args = (Number(args) - 1)
     if (args > player.queue.size){
-      return await interaction.reply({
+      return interaction.reply({
         embeds:[
           new EmbedBuilder()
           .setColor(this.client.errorColor)
@@ -55,6 +55,5 @@ module.exports = class extends Command {
       fetchReply: true
     })
     deleteMessage(message, 30000)
-    return
   }
 }
