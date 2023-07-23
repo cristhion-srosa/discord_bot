@@ -68,7 +68,7 @@ module.exports = class extends Command {
       }
     } else if (input === "queue") {
         if (!player.queue.size) {
-          return interaction.reply({
+          return await interaction.reply({
             embeds: [
               new EmbedBuilder()
                 .setColor(this.client.errorColor)

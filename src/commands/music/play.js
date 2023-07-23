@@ -60,7 +60,7 @@ module.exports = class extends Command {
     switch (res.loadType) {
       case "NO_MATCHES":
         if (!player.queue.current) player.destroy()
-        return interaction.reply({
+        return await interaction.reply({
           embeds: [
             new EmbedBuilder()
               .setColor(this.client.errorColor)
@@ -159,7 +159,7 @@ module.exports = class extends Command {
             if (size < player.queue.size) {
               player.queue.remove(toNumber(size + 1))
             }
-            return interaction.editReply({
+            return await interaction.editReply({
               embeds: [
                 new EmbedBuilder()  
                   .setColor(this.client.errorColor)
@@ -169,7 +169,7 @@ module.exports = class extends Command {
             })
           } else {
             player.stop()
-            return interaction.editReply({
+            return await interaction.editReply({
               embeds: [
                 new EmbedBuilder()
                   .setColor(this.client.errorColor)

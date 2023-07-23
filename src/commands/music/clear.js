@@ -32,5 +32,6 @@ module.exports = class extends Command {
       fetchReply: true
     })
     deleteMessage(message, 60000)
+    return
   }
 }

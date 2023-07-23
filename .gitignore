@@ -1,6 +1,7 @@
 node_modules
 build
 npm-debug.log
+guildsLanguages.json
+Procfile
 .env
 .DS_Store
-Procfile
