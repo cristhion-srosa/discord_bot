@@ -1,19 +1,29 @@
-require("dotenv").config()
-const { GatewayIntentBits } = require('discord.js');
+require("dotenv").config();
+const { GatewayIntentBits, Partials, Options } = require('discord.js');
 
-const Client = require("./src/structures/Client.js")
+ const { Kwanza } = require("./src/structures/Kwanza.js");
+const Manager = require("./src/structures/Manager.js");
 
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMessageReactions,
-    GatewayIntentBits.GuildInvites,
-    GatewayIntentBits.GuildVoiceStates,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildPresences,
-  ]
-})
+const { Guilds, GuildMembers, GuildVoiceStates } = GatewayIntentBits;
 
-client.login(process.env.BOT_TOKEN)
+const options = {
+  clientOptions: {
+    allowedMentions: {
+      parse: ['users', 'roles'],
+      repliedUser: true
+    },
+    partials: [Partials.User, Partials.Message, Partials.Reaction, Partials.GuildMember],
+    intents: [Guilds, GuildMembers, GuildVoiceStates],
+    makeCache: Options.cacheWithLimits(Options.DefaultMakeCacheSettings),
+  },
+  client: Kwanza,
+  autoRestart: true,
+  autoReconnect: true,
+  spawnTimeout: 60000,
+  token: process.env.BOT_TOKEN,
+};
+
+const manager = new Manager(options);
+
+manager.start();
+
