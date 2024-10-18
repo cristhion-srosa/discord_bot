@@ -1,0 +1,85 @@
+server: # REST and WS server
+  port: 2333
+  address: 127.0.0.1
+
+lavalink:
+  server:
+    password: "youshallnotpass"
+    playerUpdateInterval: 5 # How frequently to send player updates to clients, in seconds
+    statsTaskInterval: 60 # How frequently to send the node stats to clients, in seconds
+    koe:
+      useNAS: true # Native Audio Sending (udp-queue)
+      useEpoll: true # Native transport for Linux x86-64 & aarch64
+      useKQueue: false # Native transport for Darwin Aarch64
+      highPacketPriority: true
+      bufferDurationMs: 400
+      byteBufAllocator: "default"
+    sources:
+      # Remote sources
+      bandcamp: true
+      getyarn: true
+      http: true
+      odysee: true
+      reddit: true
+      rumble: true
+      soundcloud: true
+      tiktok: true
+      twitch: true
+      vimeo: true
+      yandex: true
+      youtube: true
+
+      # Local source
+      local: false
+    lavaplayer:
+      nonAllocating: false # Whether to use the non-allocating frame buffer.
+      frameBufferDuration: 5000 # The frame buffer duration, in milliseconds
+      youtubePlaylistLoadLimit: 6 # Number of pages at 100 each
+      gc-warnings: true
+      youtubeSearchEnabled: true
+      odyseeSearchEnabled: true
+      soundcloudSearchEnabled: true
+      yandexMusicSearchEnabled: true
+      #youtubeConfig:
+        # (Bypass yt bot detection (method 1), get them here https://github.com/iv-org/youtube-trusted-session-generator)
+        #poToken: ""
+        #visitorData: ""
+        # (Bypass yt bot detection (method 2)
+        # First, enable oauth, by uncommenting the oauthEnabled and start the lavalink
+        # Secondly, follow the instructions in the lavalink logs and login to youtube using a burner account
+        # Finally, get the refresh token in the lavalink logs and uncomment the refreshToken line and put it there
+        # More info: https://github.com/lavalink-devs/youtube-source?tab=readme-ov-file#using-oauth-tokens
+        #oauthEnabled: true
+        #refreshToken: ""
+      # You can get your yandex oauth token here https://music-yandex-bot.ru/ used to remove the 30s limit on some tracks
+      #yandexOAuthToken:
+      #ratelimit:
+        #ipBlocks: ["1.0.0.0/8", "..."] # list of ip blocks
+        #excludedIps: ["...", "..."] # ips which should be explicit excluded from usage by lavalink
+        #strategy: "RotateOnBan" # RotateOnBan | LoadBalance | NanoSwitch | RotatingNanoSwitch
+        #searchTriggersFail: true # Whether a search 429 should trigger marking the ip as failing
+        #retryLimit: -1 # -1 = use default lavaplayer value | 0 = infinity | >0 = retry will happen this numbers times
+
+metrics:
+  prometheus:
+    enabled: false
+    endpoint: /metrics
+
+sentry:
+  dsn: ""
+  environment: ""
+#  tags:
+#    some_key: some_value
+#    another_key: another_value
+
+logging:
+  file:
+    path: ./logs/
+  logback:
+    rollingpolicy:
+      max-file-size: 1GB
+      max-history: 30
+
+  level:
+    root: INFO
+    lavalink: INFO
