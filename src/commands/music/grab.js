@@ -36,7 +36,8 @@ module.exports = class extends Command{
         .setTimestamp()
       ],
       components: [row],
-      fetchReply: true
+      fetchReply: true,
+      ephemeral: true
     })
 
     deleteMessage(message, 60000)
