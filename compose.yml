@@ -1,0 +1,21 @@
+services:
+  lavalink:
+    build: ./lavalink
+    ports:
+      - "2333:2333"
+    volumes:
+      - ./lavalink/application.yml:/app/application.yml
+    env_file:
+      - .env
+
+  discord-bot:
+    build: .
+    depends_on:
+      - lavalink
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+networks:
+  default:
+    name: dev-network
