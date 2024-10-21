@@ -1,10 +1,9 @@
 server: # REST and WS server
   port: 2333
-  address: 127.0.0.1
 
 lavalink:
   server:
-    password: "youshallnotpass"
+    password: "${LAVALINK_PASSWORD}"
     playerUpdateInterval: 5 # How frequently to send player updates to clients, in seconds
     statsTaskInterval: 60 # How frequently to send the node stats to clients, in seconds
     koe:
@@ -40,6 +39,11 @@ lavalink:
       odyseeSearchEnabled: true
       soundcloudSearchEnabled: true
       yandexMusicSearchEnabled: true
+      youtubeConfig: # Required for avoiding all age restrictions by YouTube, some restricted videos still can be played without.
+        email: "${GOOGLE_EMAIL}" # Email of Google account
+        password: "${GOOGLE_PASSWORD}" # Password of Google account
+        refreshToken: "${REFRESH_TOKEN}" # Refresh Token of Google account
+        oauthEnabled: true
       #youtubeConfig:
         # (Bypass yt bot detection (method 1), get them here https://github.com/iv-org/youtube-trusted-session-generator)
         #poToken: ""
@@ -49,8 +53,6 @@ lavalink:
         # Secondly, follow the instructions in the lavalink logs and login to youtube using a burner account
         # Finally, get the refresh token in the lavalink logs and uncomment the refreshToken line and put it there
         # More info: https://github.com/lavalink-devs/youtube-source?tab=readme-ov-file#using-oauth-tokens
-        #oauthEnabled: true
-        #refreshToken: ""
       # You can get your yandex oauth token here https://music-yandex-bot.ru/ used to remove the 30s limit on some tracks
       #yandexOAuthToken:
       #ratelimit:
