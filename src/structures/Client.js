@@ -16,8 +16,8 @@ module.exports = class extends Client {
 
     this.i18n = this.startI18n()
     this.manager = erelaManager(this)
-    this.errorColor = process.env.ERROR_COLOR
-    this.embedColor = process.env.COLOR
+    this.errorColor = "#FF0000"
+    this.embedColor = "#02A4D3"
   }
 
   startI18n() {
