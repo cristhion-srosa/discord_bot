@@ -4,9 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.ts"
   },
   "author": "",
   "license": "ISC",
@@ -17,7 +16,11 @@
     "dotenv": "^16.0.3",
     "i18n": "^0.15.1",
     "lodash": "^4.17.21",
-    "nodemon": "^2.0.20",
+    "nodemon": "^3.1.10",
     "shoukaku": "github:shipgirlproject/Shoukaku#master"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }
